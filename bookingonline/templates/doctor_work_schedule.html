@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}
+Lịch làm việc - Phòng Khám Đa Khoa OU
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/doctor.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<section class="doctor-work-schedule-section">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="doctor-work-schedule-header">
+
+            <div>
+                <div class="doctor-work-schedule-eyebrow">
+                    LỊCH LÀM VIỆC BÁC SĨ
+                </div>
+
+                <h1 class="section-title">
+                    Lịch làm việc của tôi
+                </h1>
+
+                <p class="section-subtitle">
+                    Theo dõi lịch làm việc theo từng ngày và từng ca trong tuần.
+                </p>
+            </div>
+
+            <div class="doctor-work-schedule-profile">
+
+                <div class="doctor-work-schedule-avatar">
+                    {{ doctor.user.name.split(' ')[-1][0] if doctor.user and doctor.user.name else 'BS' }}
+                </div>
+
+                <div>
+                    <div class="doctor-work-schedule-name">
+                        {{ doctor.user.name }}
+                    </div>
+
+                    <div class="doctor-work-schedule-specialty">
+                        {{ doctor.specialization.name }}
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Week navigation -->
+        <div class="doctor-week-toolbar">
+
+            <a
+                href="{{ url_for(
+                    'doctor_work_schedule',
+                    week=previous_week.strftime('%Y-%m-%d')
+                ) }}"
+                class="btn btn-outline btn-sm"
+            >
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+
+                Tuần trước
+            </a>
+
+            <div class="doctor-week-current">
+
+                <div class="doctor-week-label">
+                    Tuần đang xem
+                </div>
+
+                <div class="doctor-week-range">
+                    {{ week_start.strftime('%d/%m/%Y') }}
+                    -
+                    {{ week_end.strftime('%d/%m/%Y') }}
+                </div>
+
+            </div>
+
+            <a
+                href="{{ url_for(
+                    'doctor_work_schedule',
+                    week=next_week.strftime('%Y-%m-%d')
+                ) }}"
+                class="btn btn-outline btn-sm"
+            >
+                Tuần sau
+
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </a>
+
+        </div>
+
+
+        <!-- General clinic working time -->
+        <div class="doctor-work-time-summary">
+
+            <div class="doctor-work-time-summary-icon">
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <polyline points="12 7 12 12 16 14"></polyline>
+                </svg>
+            </div>
+
+            <div class="doctor-work-time-summary-content">
+
+                <div class="doctor-work-time-title">
+                    Khung giờ làm việc của phòng khám
+                </div>
+
+                <div class="doctor-work-time-list">
+
+                    <div class="doctor-work-time-item">
+                        <span class="doctor-session-dot morning"></span>
+
+                        <span>
+                            Ca sáng:
+                            <strong>
+                                {{ config.morningStartTime.strftime('%H:%M') }}
+                                -
+                                {{ config.morningEndTime.strftime('%H:%M') }}
+                            </strong>
+                        </span>
+                    </div>
+
+                    <div class="doctor-work-time-item">
+                        <span class="doctor-session-dot afternoon"></span>
+
+                        <span>
+                            Ca chiều:
+                            <strong>
+                                {{ config.afternoonStartTime.strftime('%H:%M') }}
+                                -
+                                {{ config.afternoonEndTime.strftime('%H:%M') }}
+                            </strong>
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Weekly schedule -->
+        <div class="doctor-week-grid">
+
+            {% set weekday_names = [
+                'Thứ 2',
+                'Thứ 3',
+                'Thứ 4',
+                'Thứ 5',
+                'Thứ 6',
+                'Thứ 7',
+                'Chủ nhật'
+            ] %}
+
+            {% for day in week_days %}
+
+            <div class="doctor-work-day-card">
+
+                <div class="doctor-work-day-header">
+
+                    <div>
+                        <div class="doctor-work-day-name">
+                            {{ weekday_names[loop.index0] }}
+                        </div>
+
+                        <div class="doctor-work-day-date">
+                            {{ day.date.strftime('%d/%m/%Y') }}
+                        </div>
+                    </div>
+
+                    {% if day.date == today %}
+                    <span class="doctor-today-badge">
+                        Hôm nay
+                    </span>
+                    {% endif %}
+
+                </div>
+
+
+                <!-- Morning -->
+                <div
+                    class="
+                        doctor-work-session
+                        {% if day.morning and day.morning.isAvailable %}
+                            active
+                        {% else %}
+                            empty
+                        {% endif %}
+                    "
+                >
+
+                    <div class="doctor-work-session-top">
+
+                        <div class="doctor-work-session-icon morning">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <circle cx="12" cy="12" r="4"></circle>
+                                <line x1="12" y1="2" x2="12" y2="4"></line>
+                                <line x1="12" y1="20" x2="12" y2="22"></line>
+                                <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line>
+                                <line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line>
+                                <line x1="2" y1="12" x2="4" y2="12"></line>
+                                <line x1="20" y1="12" x2="22" y2="12"></line>
+                                <line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line>
+                                <line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line>
+                            </svg>
+                        </div>
+
+                        <div>
+                            <div class="doctor-work-session-name">
+                                Ca sáng
+                            </div>
+
+                            <div class="doctor-work-session-time">
+                                {{ config.morningStartTime.strftime('%H:%M') }}
+                                -
+                                {{ config.morningEndTime.strftime('%H:%M') }}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {% if day.morning and day.morning.isAvailable %}
+
+                    <div class="doctor-work-session-status available">
+                        <span></span>
+                        Có lịch làm việc
+                    </div>
+
+                    {% else %}
+
+                    <div class="doctor-work-session-status unavailable">
+                        <span></span>
+                        Không có lịch
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- Afternoon -->
+                <div
+                    class="
+                        doctor-work-session
+                        {% if day.afternoon and day.afternoon.isAvailable %}
+                            active
+                        {% else %}
+                            empty
+                        {% endif %}
+                    "
+                >
+
+                    <div class="doctor-work-session-top">
+
+                        <div class="doctor-work-session-icon afternoon">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <circle cx="12" cy="12" r="4"></circle>
+                                <path d="M2 12h2"></path>
+                                <path d="M20 12h2"></path>
+                                <path d="M12 2v2"></path>
+                                <path d="M12 20v2"></path>
+                            </svg>
+                        </div>
+
+                        <div>
+                            <div class="doctor-work-session-name">
+                                Ca chiều
+                            </div>
+
+                            <div class="doctor-work-session-time">
+                                {{ config.afternoonStartTime.strftime('%H:%M') }}
+                                -
+                                {{ config.afternoonEndTime.strftime('%H:%M') }}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {% if day.afternoon and day.afternoon.isAvailable %}
+
+                    <div class="doctor-work-session-status available">
+                        <span></span>
+                        Có lịch làm việc
+                    </div>
+
+                    {% else %}
+
+                    <div class="doctor-work-session-status unavailable">
+                        <span></span>
+                        Không có lịch
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

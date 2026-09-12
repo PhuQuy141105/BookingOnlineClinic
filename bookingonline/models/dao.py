@@ -377,6 +377,66 @@ def get_reviews_by_doctor(doctor_id):
         .all()
     )
 
+def get_doctor_work_schedules_by_week(doctor_id, week_start):
+    week_end = week_start + timedelta(days=6)
+
+    return (
+        WorkSchedule.query
+        .filter(
+            WorkSchedule.doctorId == doctor_id,
+            WorkSchedule.workDate >= week_start,
+            WorkSchedule.workDate <= week_end,
+        )
+        .order_by(
+            WorkSchedule.workDate.asc(),
+            WorkSchedule.startTime.asc()
+        )
+        .all()
+    )
+
+def get_week_start(target_date=None):
+    target_date = target_date or date.today()
+
+    return target_date - timedelta(
+        days=target_date.weekday()
+    )
+
+def build_doctor_week_schedule(doctor_id, week_start):
+    schedules = get_doctor_work_schedules_by_week(
+        doctor_id,
+        week_start
+    )
+
+    schedule_map = {}
+
+    for schedule in schedules:
+        schedule_map[
+            (schedule.workDate, schedule.session)
+        ] = schedule
+
+    days = []
+
+    for offset in range(7):
+        current_date = week_start + timedelta(days=offset)
+
+        days.append({
+            "date": current_date,
+            "morning": schedule_map.get(
+                (
+                    current_date,
+                    WorkScheduleSessionEnum.MORNING
+                )
+            ),
+            "afternoon": schedule_map.get(
+                (
+                    current_date,
+                    WorkScheduleSessionEnum.AFTERNOON
+                )
+            )
+        })
+
+    return days
+
 # Chatbot - bichnhu
 WEEKDAY_CODE = {
     0: "MONDAY", 1: "TUESDAY", 2: "WEDNESDAY", 3: "THURSDAY",
