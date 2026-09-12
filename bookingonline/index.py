@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from bookingonline import app, db, login_manager
@@ -511,6 +511,58 @@ def doctor_detail(doctor_id):
         "doctor_detail.html",
         doctor=doctor,
         reviews=reviews
+    )
+
+@app.route("/doctor/work-schedule")
+@login_required
+def doctor_work_schedule():
+    if current_user.role != UserRoleEnum.DOCTOR:
+        flash("Chỉ bác sĩ mới có thể xem lịch làm việc.", "error")
+        return redirect(url_for("index"))
+
+    doctor = dao.get_doctor_profile_by_user(current_user.id)
+
+    if not doctor:
+        flash("Không tìm thấy hồ sơ bác sĩ.", "error")
+        return redirect(url_for("index"))
+
+    week_param = request.args.get("week", "").strip()
+
+    if week_param:
+        try:
+            target_date = datetime.strptime(
+                week_param,
+                "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            target_date = date.today()
+    else:
+        target_date = date.today()
+
+    week_start = dao.get_week_start(target_date)
+    week_end = week_start + timedelta(days=6)
+
+    week_days = dao.build_doctor_week_schedule(
+        doctor.id,
+        week_start
+    )
+
+    config = dao.get_system_config()
+
+    previous_week = week_start - timedelta(days=7)
+    next_week = week_start + timedelta(days=7)
+
+    return render_template(
+        "doctor_work_schedule.html",
+        active_page="work-schedule",
+        doctor=doctor,
+        week_days=week_days,
+        week_start=week_start,
+        week_end=week_end,
+        previous_week=previous_week,
+        next_week=next_week,
+        config=config,
+        today=date.today()
     )
 
 #bichnhu-chatbot
